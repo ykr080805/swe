@@ -46,7 +46,11 @@ exports.getSent = async (req, res) => {
 
 exports.getThread = async (req, res) => {
   try {
-    const messages = await Message.find({ threadId: req.params.threadId })
+    const uid = req.user.userId;
+    const messages = await Message.find({
+      threadId: req.params.threadId,
+      $or: [{ sender: uid }, { recipient: uid }]
+    })
       .populate('sender', 'name userId role')
       .populate('recipient', 'name userId role')
       .sort({ createdAt: 1 });
@@ -58,7 +62,13 @@ exports.getThread = async (req, res) => {
 
 exports.markRead = async (req, res) => {
   try {
-    await Message.findByIdAndUpdate(req.params.id, { isRead: true });
+    const msg = await Message.findById(req.params.id);
+    if (!msg) return res.status(404).json({ error: 'Message not found' });
+    if (msg.recipient.toString() !== req.user.userId) {
+      return res.status(403).json({ error: 'Only the recipient can mark a message as read' });
+    }
+    msg.isRead = true;
+    await msg.save();
     res.json({ message: 'Marked as read' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to mark message as read' });
@@ -70,12 +80,15 @@ exports.deleteMessage = async (req, res) => {
     const msg = await Message.findById(req.params.id);
     if (!msg) return res.status(404).json({ error: 'Message not found' });
 
-    if (msg.sender.toString() === req.user.userId) {
-      msg.deletedBySender = true;
+    const uid = req.user.userId;
+    const isSender = msg.sender.toString() === uid;
+    const isRecipient = msg.recipient.toString() === uid;
+    if (!isSender && !isRecipient) {
+      return res.status(403).json({ error: 'Not authorized to delete this message' });
     }
-    if (msg.recipient.toString() === req.user.userId) {
-      msg.deletedByRecipient = true;
-    }
+
+    if (isSender) msg.deletedBySender = true;
+    if (isRecipient) msg.deletedByRecipient = true;
     await msg.save();
     res.json({ message: 'Message deleted' });
   } catch (err) {

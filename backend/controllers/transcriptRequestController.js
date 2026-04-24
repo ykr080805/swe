@@ -40,9 +40,13 @@ exports.updateTranscriptRequestStatus = async (req, res) => {
       complete: 'completed'
     };
 
+    const update = { status: statusMap[action] };
+    if (action === 'complete' && req.body.documentId) update.documentId = req.body.documentId;
+    if (req.body.remarks) update.remarks = req.body.remarks;
+
     const request = await TranscriptRequest.findByIdAndUpdate(
       req.params.id,
-      { status: statusMap[action] },
+      update,
       { new: true }
     );
 

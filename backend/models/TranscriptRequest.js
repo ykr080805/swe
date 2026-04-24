@@ -6,7 +6,8 @@ const transcriptRequestSchema = new mongoose.Schema({
   numCopies: { type: Number, required: true, default: 1 },
   destination: { type: String, required: true },
   status: { type: String, enum: ['pending', 'approved', 'rejected', 'completed'], default: 'pending' },
-  remarks: { type: String }
+  remarks: { type: String },
+  documentId: { type: String }
 }, {
   timestamps: true
 });

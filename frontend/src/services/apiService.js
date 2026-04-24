@@ -58,13 +58,14 @@ export const updateSystemConfig = (data) => api.put('/admin/system-config', data
 export const getStudentDashboard = () => api.get('/student/dashboard');
 export const getAcademicRecord = () => api.get('/student/academic-record');
 export const getAvailableCourses = () => api.get('/courses/available');
-export const enrollCourse = (courseOfferingId) => api.post('/enrollment/register', { courseOfferingId });
-export const dropCourse = (courseOfferingId) => api.post('/enrollment/drop', { courseOfferingId });
+export const enrollCourse = (courseOfferingId) => api.post('/enrollment', { courseOfferingId });
+export const dropCourse = (courseOfferingId) => api.delete(`/enrollment/${courseOfferingId}`);
 
-// ─── Module 7: Documents ───
-export const getDocumentRequests = () => api.get('/documents');
-export const createDocumentRequest = (data) => api.post('/documents', data);
+// ─── Module 7: Documents / Transcript Requests ───
+export const getMyTranscriptRequests = () => api.get('/student/transcript-request');
+export const createTranscriptRequest = (data) => api.post('/student/transcript-request', data);
 export const generateTranscript = (studentId) => api.post(`/documents/transcript/${studentId}`);
+export const generateMyTranscript = () => api.post('/documents/my-transcript');
 export const downloadTranscript = (documentId) => api.get(`/documents/transcript/${documentId}`, { responseType: 'blob' });
 export const verifyTranscript = (documentId) => api.get(`/documents/transcript/verify/${documentId}`);
 

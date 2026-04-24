@@ -79,6 +79,8 @@ exports.deleteAssignment = async (req, res) => {
 
 exports.getSubmissions = async (req, res) => {
   try {
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, faculty: req.user.userId });
+    if (!assignment) return res.status(403).json({ error: 'Not authorized for this assignment' });
     const submissions = await Submission.find({ assignment: req.params.assignmentId })
       .populate('student', 'name userId email');
     res.json(submissions);
@@ -90,12 +92,16 @@ exports.getSubmissions = async (req, res) => {
 exports.gradeSubmission = async (req, res) => {
   try {
     const { score, feedback } = req.body;
-    const submission = await Submission.findByIdAndUpdate(
-      req.params.submissionId,
-      { score, feedback, gradedBy: req.user.userId, gradedAt: new Date() },
-      { new: true }
-    );
+    const submission = await Submission.findById(req.params.submissionId).populate('assignment');
     if (!submission) return res.status(404).json({ error: 'Submission not found' });
+    if (submission.assignment?.faculty?.toString() !== req.user.userId) {
+      return res.status(403).json({ error: 'Not authorized to grade this submission' });
+    }
+    submission.score = score;
+    submission.feedback = feedback;
+    submission.gradedBy = req.user.userId;
+    submission.gradedAt = new Date();
+    await submission.save();
     res.json(submission);
   } catch (err) {
     res.status(500).json({ error: 'Failed to grade submission' });
@@ -104,10 +110,18 @@ exports.gradeSubmission = async (req, res) => {
 
 // ─── Attendance ───
 
+const verifyCourseOwnership = async (courseOfferingId, facultyId) => {
+  const offering = await CourseOffering.findById(courseOfferingId);
+  return offering && offering.faculty?.toString() === facultyId;
+};
+
 exports.markAttendance = async (req, res) => {
   try {
     const { courseOfferingId } = req.params;
-    const { date, records } = req.body; // records: [{ student, status }]
+    if (!await verifyCourseOwnership(courseOfferingId, req.user.userId)) {
+      return res.status(403).json({ error: 'Not authorized for this course' });
+    }
+    const { date, records } = req.body;
     const session = await AttendanceSession.findOneAndUpdate(
       { courseOffering: courseOfferingId, date: new Date(date) },
       { faculty: req.user.userId, records },
@@ -121,7 +135,11 @@ exports.markAttendance = async (req, res) => {
 
 exports.getAttendanceSessions = async (req, res) => {
   try {
-    const sessions = await AttendanceSession.find({ courseOffering: req.params.courseOfferingId })
+    const { courseOfferingId } = req.params;
+    if (!await verifyCourseOwnership(courseOfferingId, req.user.userId)) {
+      return res.status(403).json({ error: 'Not authorized for this course' });
+    }
+    const sessions = await AttendanceSession.find({ courseOffering: courseOfferingId })
       .populate('records.student', 'name userId')
       .sort({ date: -1 });
     res.json(sessions);
@@ -134,8 +152,12 @@ exports.getAttendanceSessions = async (req, res) => {
 
 exports.getRoster = async (req, res) => {
   try {
+    const { courseOfferingId } = req.params;
+    if (!await verifyCourseOwnership(courseOfferingId, req.user.userId)) {
+      return res.status(403).json({ error: 'Not authorized for this course' });
+    }
     const enrollments = await Enrollment.find({
-      courseOffering: req.params.courseOfferingId,
+      courseOffering: courseOfferingId,
       status: 'enrolled'
     }).populate('student', 'name userId email');
     res.json(enrollments);
@@ -146,12 +168,16 @@ exports.getRoster = async (req, res) => {
 
 exports.submitGrades = async (req, res) => {
   try {
-    const { grades } = req.body; // [{ enrollmentId, grade, gradePoints }]
+    const { courseOfferingId } = req.params;
+    if (!await verifyCourseOwnership(courseOfferingId, req.user.userId)) {
+      return res.status(403).json({ error: 'Not authorized for this course' });
+    }
+    const { grades } = req.body;
     const results = [];
     for (const g of grades) {
       const enrollment = await Enrollment.findByIdAndUpdate(
         g.enrollmentId,
-        { grade: g.grade, gradePoints: g.gradePoints, isLocked: true },
+        { grade: g.grade, gradePoints: g.gradePoints, isLocked: true, status: 'completed' },
         { new: true }
       );
       results.push(enrollment);

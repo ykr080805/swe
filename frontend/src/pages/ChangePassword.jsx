@@ -17,7 +17,7 @@ function getStrength(pw) {
 
 export default function ChangePassword() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ userId: '', currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -51,7 +51,7 @@ export default function ChangePassword() {
   };
 
   const handleReset = () => {
-    setForm({ userId: '', currentPassword: '', newPassword: '', confirmPassword: '' });
+    setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     setMsg('');
   };
 
@@ -73,10 +73,6 @@ export default function ChangePassword() {
         <div className="bg-white border border-gray-200 rounded shadow-sm">
           <div className="bg-[#2c3e50] text-white px-5 py-3 rounded-t font-semibold text-sm">Change Password</div>
           <form onSubmit={handleChange} className="p-5 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-              <input value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} placeholder="Username" className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#3498db]" />
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
               <div className="relative">

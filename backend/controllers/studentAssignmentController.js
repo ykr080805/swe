@@ -62,7 +62,7 @@ exports.getMyAttendance = async (req, res) => {
 
     const sessions = await AttendanceSession.find({
       courseOffering: { $in: courseOfferingIds }
-    }).populate('courseOffering');
+    }).populate({ path: 'courseOffering', populate: { path: 'course', select: 'code name' } });
 
     // Build per-course summary
     const summaryMap = {};

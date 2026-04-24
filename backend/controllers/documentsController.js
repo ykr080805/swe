@@ -5,25 +5,22 @@ const crypto = require('crypto');
 const Enrollment = require('../models/Enrollment');
 const User = require('../models/User');
 
-exports.generateTranscript = async (req, res) => {
-  try {
-    const { studentId } = req.params;
-    const student = await User.findById(studentId).select('-password');
-    if (!student) return res.status(404).json({ error: 'Student not found' });
+const GRADE_POINTS = { 'AA': 10, 'AB': 9, 'BB': 8, 'BC': 7, 'CC': 6, 'CD': 5, 'DD': 4, 'fail': 0 };
 
-    const enrollments = await Enrollment.find({ student: studentId, grade: { $ne: null } })
-      .populate({
-        path: 'courseOffering',
-        populate: { path: 'course', select: 'name code credits' }
-      });
+const buildTranscriptPDF = async (studentId) => {
+  const student = await User.findById(studentId).select('-password');
+  if (!student) throw new Error('Student not found');
 
-    const documentId = crypto.randomUUID();
-    const filePath = path.join(__dirname, '..', 'uploads', `transcript_${documentId}.pdf`);
+  const enrollments = await Enrollment.find({ student: studentId, status: 'completed' })
+    .populate({ path: 'courseOffering', populate: { path: 'course', select: 'name code credits' } })
+    .sort({ year: 1, semester: 1 });
 
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(__dirname, '..', 'uploads');
-    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+  const documentId = crypto.randomUUID();
+  const uploadsDir = path.join(__dirname, '..', 'uploads');
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+  const filePath = path.join(uploadsDir, `transcript_${documentId}.pdf`);
 
+  await new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50 });
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
@@ -37,7 +34,7 @@ exports.generateTranscript = async (req, res) => {
     doc.text(`Generated: ${new Date().toLocaleDateString()}`, { align: 'center' });
     doc.moveDown(1);
 
-    // Student Info
+    // Student info
     doc.fillColor('#000').fontSize(11).font('Helvetica-Bold').text('Student Information');
     doc.moveDown(0.3);
     doc.fontSize(10).font('Helvetica');
@@ -47,65 +44,96 @@ exports.generateTranscript = async (req, res) => {
     doc.text(`Email: ${student.email}`);
     doc.moveDown(1);
 
-    // Table Header
-    doc.font('Helvetica-Bold').fontSize(10);
-    doc.text('Course Code', 50, doc.y, { width: 100 });
-    doc.text('Course Name', 150, doc.y - 12, { width: 200 });
-    doc.text('Credits', 350, doc.y - 12, { width: 60 });
-    doc.text('Grade', 410, doc.y - 12, { width: 60 });
-    doc.text('Points', 470, doc.y - 12, { width: 60 });
-    doc.moveDown(0.5);
-    doc.moveTo(50, doc.y).lineTo(530, doc.y).stroke();
-    doc.moveDown(0.3);
-
-    // Table Rows
-    doc.font('Helvetica').fontSize(9);
-    let totalCredits = 0, weightedSum = 0;
+    // Group by semester
+    const semMap = {};
     for (const e of enrollments) {
-      const course = e.courseOffering?.course;
-      const code = course?.code || 'N/A';
-      const name = course?.name || 'Unknown Course';
-      const credits = course?.credits || 3;
-      const grade = e.grade || '-';
-      const points = e.gradePoints != null ? e.gradePoints.toFixed(1) : '-';
-
-      doc.text(code, 50, doc.y, { width: 100 });
-      doc.text(name, 150, doc.y - 10, { width: 200 });
-      doc.text(String(credits), 350, doc.y - 10, { width: 60 });
-      doc.text(grade, 410, doc.y - 10, { width: 60 });
-      doc.text(points, 470, doc.y - 10, { width: 60 });
-      doc.moveDown(0.3);
-
-      if (e.gradePoints != null) {
-        totalCredits += credits;
-        weightedSum += e.gradePoints * credits;
-      }
+      const key = `${e.year}-${e.semester}`;
+      if (!semMap[key]) semMap[key] = { label: `${e.semester} ${e.year}`, courses: [] };
+      semMap[key].courses.push(e);
     }
 
-    // CGPA Summary
-    doc.moveDown(1);
-    doc.moveTo(50, doc.y).lineTo(530, doc.y).stroke();
+    let totalWeighted = 0, totalCredits = 0;
+
+    for (const { label, courses } of Object.values(semMap)) {
+      doc.font('Helvetica-Bold').fontSize(10).text(label);
+      doc.moveDown(0.2);
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text('Code', 50, doc.y, { width: 80 });
+      doc.text('Course Name', 130, doc.y - 10, { width: 220 });
+      doc.text('Cr', 350, doc.y - 10, { width: 30 });
+      doc.text('Grade', 385, doc.y - 10, { width: 50 });
+      doc.text('Pts', 440, doc.y - 10, { width: 40 });
+      doc.moveDown(0.2);
+      doc.moveTo(50, doc.y).lineTo(490, doc.y).stroke();
+      doc.moveDown(0.2);
+
+      let semWeighted = 0, semCredits = 0;
+      doc.font('Helvetica').fontSize(9);
+      for (const e of courses) {
+        const course = e.courseOffering?.course;
+        const credits = course?.credits || 3;
+        const grade = e.grade || '-';
+        const pts = GRADE_POINTS[grade] ?? e.gradePoints ?? null;
+
+        doc.text(course?.code || '-', 50, doc.y, { width: 80 });
+        doc.text(course?.name || 'Unknown', 130, doc.y - 10, { width: 220 });
+        doc.text(String(credits), 350, doc.y - 10, { width: 30 });
+        doc.text(grade, 385, doc.y - 10, { width: 50 });
+        doc.text(pts != null ? pts.toFixed(1) : '-', 440, doc.y - 10, { width: 40 });
+        doc.moveDown(0.3);
+
+        if (pts != null) { semWeighted += pts * credits; semCredits += credits; }
+      }
+      const sgpa = semCredits > 0 ? (semWeighted / semCredits).toFixed(2) : 'N/A';
+      doc.font('Helvetica-Bold').fontSize(9).text(`SGPA: ${sgpa}`, { align: 'right' });
+      doc.moveDown(0.8);
+
+      totalWeighted += semWeighted;
+      totalCredits += semCredits;
+    }
+
+    doc.moveTo(50, doc.y).lineTo(490, doc.y).stroke();
     doc.moveDown(0.5);
-    const cgpa = totalCredits > 0 ? (weightedSum / totalCredits).toFixed(2) : 'N/A';
-    doc.font('Helvetica-Bold').fontSize(11);
+    const cgpa = totalCredits > 0 ? (totalWeighted / totalCredits).toFixed(2) : 'N/A';
+    doc.font('Helvetica-Bold').fontSize(11).fillColor('#000');
     doc.text(`Total Credits: ${totalCredits}     CGPA: ${cgpa}`);
 
-    // Footer
     doc.moveDown(2);
     doc.fontSize(8).font('Helvetica').fillColor('#999');
     doc.text('This is a system-generated document. Verify authenticity using the Document ID.', { align: 'center' });
 
     doc.end();
+    stream.on('finish', resolve);
+    stream.on('error', reject);
+  });
 
-    stream.on('finish', () => {
-      res.status(201).json({
-        message: 'Transcript generated successfully',
-        documentId,
-        downloadUrl: `/api/documents/transcript/${documentId}`
-      });
+  return { documentId, student };
+};
+
+exports.generateTranscript = async (req, res) => {
+  try {
+    const { documentId } = await buildTranscriptPDF(req.params.studentId);
+    res.status(201).json({
+      message: 'Transcript generated successfully',
+      documentId,
+      downloadUrl: `/api/documents/transcript/${documentId}`
     });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to generate transcript: ' + err.message });
+    res.status(err.message === 'Student not found' ? 404 : 500)
+      .json({ error: err.message || 'Failed to generate transcript' });
+  }
+};
+
+exports.generateMyTranscript = async (req, res) => {
+  try {
+    const { documentId } = await buildTranscriptPDF(req.user.userId);
+    res.status(201).json({
+      message: 'Transcript generated successfully',
+      documentId,
+      downloadUrl: `/api/documents/transcript/${documentId}`
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to generate transcript' });
   }
 };
 

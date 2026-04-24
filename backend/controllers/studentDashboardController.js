@@ -3,7 +3,7 @@ const AttendanceSession = require('../models/AttendanceSession');
 const Assignment = require('../models/Assignment');
 const Submission = require('../models/Submission');
 
-const GRADE_POINTS = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'D': 4, 'F': 0 };
+const GRADE_POINTS = { 'AA': 10, 'AB': 9, 'BB': 8, 'BC': 7, 'CC': 6, 'CD': 5, 'DD': 4, 'fail': 0 };
 const ATTENDANCE_WARN_THRESHOLD = 75;
 
 exports.getStudentDashboard = async (req, res) => {

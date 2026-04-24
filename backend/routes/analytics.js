@@ -10,6 +10,11 @@ router.get('/program/:programId', authenticate, authorizeRoles('admin'), analyti
 
 router.get('/department/:deptId', authenticate, authorizeRoles('admin'), analyticsController.getDepartmentAnalytics);
 
-router.get('/student/:studentId', authenticate, authorizeRoles('faculty', 'admin', 'student'), analyticsController.getStudentAnalytics);
+router.get('/student/:studentId', authenticate, authorizeRoles('faculty', 'admin', 'student'), (req, res, next) => {
+  if (req.user.role === 'student' && req.params.studentId !== req.user.userId) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  next();
+}, analyticsController.getStudentAnalytics);
 
 module.exports = router;

@@ -6,6 +6,7 @@ const enrollmentAdminController = require('../controllers/enrollmentAdminControl
 
 // /report must come before /:id to avoid being shadowed
 router.get('/report', authenticate, authorizeRoles('admin'), enrollmentAdminController.getEnrollmentReport);
+router.get('/offerings', authenticate, authorizeRoles('admin'), enrollmentAdminController.getOfferings);
 
 router.get('/', authenticate, authorizeRoles('admin'), enrollmentAdminController.getAllEnrollments);
 router.post('/', authenticate, authorizeRoles('admin'), auditLogger('MANUAL_ENROLL'), enrollmentAdminController.manualEnroll);

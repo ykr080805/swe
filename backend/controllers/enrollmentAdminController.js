@@ -86,3 +86,17 @@ exports.removeEnrollment = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// Returns all course offerings (for admin instructor management)
+exports.getOfferings = async (req, res) => {
+  try {
+    const offerings = await CourseOffering.find()
+      .populate({ path: 'course', select: 'code name credits type' })
+      .populate('faculty', 'name userId')
+      .populate('instructors', 'name userId')
+      .sort({ year: -1, createdAt: -1 });
+    res.json(offerings);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};

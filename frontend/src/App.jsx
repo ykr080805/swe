@@ -15,6 +15,7 @@ import StudentDirectory from './pages/admin/StudentDirectory';
 import FacultyDirectory from './pages/admin/FacultyDirectory';
 import EnrollmentDashboard from './pages/admin/EnrollmentDashboard';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
+import FeedbackManagement from './pages/admin/FeedbackManagement';
 
 // Student Pages (Module 2, 6, 7)
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -26,12 +27,14 @@ import LeaveApplication from './pages/student/LeaveApplication';
 import Complaints from './pages/student/Complaints';
 import NoDues from './pages/student/NoDues';
 import DocumentRequests from './pages/student/DocumentRequests';
+import CourseFeedback from './pages/student/CourseFeedback';
 
 // Faculty Pages (Module 3)
 import AssignmentConfiguration from './pages/faculty/AssignmentConfiguration';
 import SubmissionReview from './pages/faculty/SubmissionReview';
 import AttendanceTracking from './pages/faculty/AttendanceTracking';
 import GradeSubmission from './pages/faculty/GradeSubmission';
+import CourseFeedbackResults from './pages/faculty/CourseFeedbackResults';
 
 import ProfileSettings from './pages/ProfileSettings';
 
@@ -65,6 +68,7 @@ const NAV_ITEMS = {
     { title: 'Students', path: '/admin/students' },
     { title: 'Faculty', path: '/admin/faculty' },
     { title: 'Enrollments', path: '/admin/enrollments' },
+    { title: 'Feedback', path: '/admin/feedback' },
     { title: 'Announcements', path: '/admin/announcements' },
     { title: 'Analytics', path: '/admin/analytics' },
     { title: 'Messages', path: '/admin/messages' },
@@ -76,6 +80,7 @@ const NAV_ITEMS = {
     { title: 'Academic History', path: '/student/history' },
     { title: 'Attendance', path: '/student/attendance' },
     { title: 'Assignments', path: '/student/assignments' },
+    { title: 'Feedback', path: '/student/feedback' },
     { title: 'Resources', path: '/student/resources' },
     { title: 'Messages', path: '/student/messages' },
     { title: 'Hostel Leave', path: '/student/leave' },
@@ -90,6 +95,7 @@ const NAV_ITEMS = {
     { title: 'Assignments', path: '/faculty/assignments' },
     { title: 'Submissions', path: '/faculty/submissions' },
     { title: 'Grading', path: '/faculty/grading' },
+    { title: 'Feedback Results', path: '/faculty/feedback' },
     { title: 'Messages', path: '/faculty/messages' },
     { title: 'Profile', path: '/faculty/profile' },
   ],
@@ -121,6 +127,7 @@ function App() {
           <Route path="/admin/enrollments" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><EnrollmentDashboard /></AppShell></ProtectedRoute>} />
           <Route path="/admin/announcements" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><AnnouncementsFeed /></AppShell></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><AnalyticsDashboard /></AppShell></ProtectedRoute>} />
+          <Route path="/admin/feedback" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><FeedbackManagement /></AppShell></ProtectedRoute>} />
           <Route path="/admin/messages" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><MessagingInbox /></AppShell></ProtectedRoute>} />
           <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><ProfileSettings /></AppShell></ProtectedRoute>} />
           
@@ -142,6 +149,7 @@ function App() {
           <Route path="/student/complaints" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><Complaints /></AppShell></ProtectedRoute>} />
           <Route path="/student/nodues" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><NoDues /></AppShell></ProtectedRoute>} />
           <Route path="/student/documents" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><DocumentRequests /></AppShell></ProtectedRoute>} />
+          <Route path="/student/feedback" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><CourseFeedback /></AppShell></ProtectedRoute>} />
           <Route path="/student/profile" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><ProfileSettings /></AppShell></ProtectedRoute>} />
           
           {/* Faculty Routes */}
@@ -156,6 +164,7 @@ function App() {
           <Route path="/faculty/submissions" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><SubmissionReview /></AppShell></ProtectedRoute>} />
           <Route path="/faculty/attendance" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><AttendanceTracking /></AppShell></ProtectedRoute>} />
           <Route path="/faculty/grading" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><GradeSubmission /></AppShell></ProtectedRoute>} />
+          <Route path="/faculty/feedback" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><CourseFeedbackResults /></AppShell></ProtectedRoute>} />
           <Route path="/faculty/messages" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><MessagingInbox /></AppShell></ProtectedRoute>} />
           <Route path="/faculty/profile" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><ProfileSettings /></AppShell></ProtectedRoute>} />
 

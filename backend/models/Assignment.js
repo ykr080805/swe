@@ -7,7 +7,7 @@ const assignmentSchema = new mongoose.Schema({
   description: { type: String },
   deadline: { type: Date, required: true },
   maxScore: { type: Number, default: 100 },
-  isPublished: { type: Boolean, default: false },
+  isPublished: { type: Boolean, default: true },
   allowedFileTypes: [{ type: String }],
   attachments: [{ type: String }],
   attachmentFileName: { type: String }

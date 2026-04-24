@@ -103,26 +103,48 @@ export default function CourseRegistration() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Course', 'Faculty', 'Credits', 'Seats', 'Action'].map(h => (
+                  {['Course', 'Type', 'Instructor(s)', 'Credits', 'Seats', 'Action'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {available.map(c => (
-                  <tr key={c._id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {c.course?.name}
-                      <span className="ml-1.5 text-xs text-gray-400">({c.course?.code})</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{c.faculty?.name || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">{c.course?.credits || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">{c.enrolled || 0}/{c.capacity || '∞'}</td>
-                    <td className="px-4 py-3">
-                      <Button onClick={() => handleEnroll(c._id)}>Enroll</Button>
-                    </td>
-                  </tr>
-                ))}
+                {available.map(c => {
+                  const typeColor = {
+                    core: 'bg-blue-100 text-blue-700',
+                    departmental_elective: 'bg-amber-100 text-amber-700',
+                    open_elective: 'bg-emerald-100 text-emerald-700'
+                  }[c.course?.type] || 'bg-gray-100 text-gray-600';
+                  const typeLabel = {
+                    core: 'Core',
+                    departmental_elective: 'Dept. Elective',
+                    open_elective: 'Open Elective'
+                  }[c.course?.type] || '';
+                  const instructorNames = (c.instructors?.length > 0
+                    ? c.instructors.map(i => i.name)
+                    : c.faculty?.name ? [c.faculty.name] : ['—']
+                  ).join(', ');
+
+                  return (
+                    <tr key={c._id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {c.course?.name}
+                        <span className="ml-1.5 text-xs text-gray-400">({c.course?.code})</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {typeLabel && (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${typeColor}`}>{typeLabel}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 text-xs">{instructorNames}</td>
+                      <td className="px-4 py-3 text-gray-600">{c.course?.credits || '—'}</td>
+                      <td className="px-4 py-3 text-gray-600">{c.enrolled || 0}/{c.capacity || '∞'}</td>
+                      <td className="px-4 py-3">
+                        <Button onClick={() => handleEnroll(c._id)}>Enroll</Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

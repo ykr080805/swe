@@ -10,8 +10,17 @@ const CourseOffering = require('../models/CourseOffering');
 
 exports.getMyCourseOfferings = async (req, res) => {
   try {
-    const offerings = await CourseOffering.find({ faculty: req.user.userId })
-      .populate({ path: 'course', select: 'code name credits description' })
+    // Match offerings where user is the primary faculty OR listed in instructors[]
+    // The $or handles both old offerings (only faculty set) and new ones (instructors array)
+    const offerings = await CourseOffering.find({
+      $or: [
+        { faculty: req.user.userId },
+        { instructors: req.user.userId }
+      ]
+    })
+      .populate({ path: 'course', select: 'code name credits description type' })
+      .populate('faculty', 'name userId')
+      .populate('instructors', 'name userId')
       .sort({ year: -1, semester: 1 });
     res.json(offerings);
   } catch (err) {
@@ -25,8 +34,11 @@ exports.createAssignment = async (req, res) => {
   try {
     const { courseOfferingId } = req.params;
     const offering = await CourseOffering.findById(courseOfferingId);
-    if (!offering || offering.faculty.toString() !== req.user.userId) {
-      if (req.file) fs.unlinkSync(req.file.path).catch?.(() => {});
+    const isAuthorized = offering &&
+      (offering.faculty?.toString() === req.user.userId.toString() ||
+       (offering.instructors || []).some(i => i.toString() === req.user.userId.toString()));
+    if (!isAuthorized) {
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(403).json({ error: 'Not authorized for this course' });
     }
     const data = { ...req.body, courseOffering: courseOfferingId, faculty: req.user.userId };
@@ -131,9 +143,16 @@ exports.gradeSubmission = async (req, res) => {
     const { score, feedback } = req.body;
     const submission = await Submission.findById(req.params.submissionId).populate('assignment');
     if (!submission) return res.status(404).json({ error: 'Submission not found' });
-    if (submission.assignment?.faculty?.toString() !== req.user.userId) {
+
+    // Any instructor on the course offering can grade
+    const offeringId = submission.assignment?.courseOffering;
+    if (offeringId) {
+      const allowed = await verifyCourseOwnership(offeringId, req.user.userId);
+      if (!allowed) return res.status(403).json({ error: 'Not authorized to grade this submission' });
+    } else if (submission.assignment?.faculty?.toString() !== req.user.userId) {
       return res.status(403).json({ error: 'Not authorized to grade this submission' });
     }
+
     submission.score = score;
     submission.feedback = feedback;
     submission.gradedBy = req.user.userId;
@@ -149,7 +168,10 @@ exports.gradeSubmission = async (req, res) => {
 
 const verifyCourseOwnership = async (courseOfferingId, facultyId) => {
   const offering = await CourseOffering.findById(courseOfferingId);
-  return offering && offering.faculty?.toString() === facultyId;
+  if (!offering) return false;
+  // Allow access if user is primary faculty OR a co-instructor
+  const isInstructors = offering.instructors?.some(i => i.toString() === facultyId);
+  return isInstructors || offering.faculty?.toString() === facultyId;
 };
 
 exports.markAttendance = async (req, res) => {
@@ -206,6 +228,7 @@ exports.getRoster = async (req, res) => {
 exports.submitGrades = async (req, res) => {
   try {
     const { courseOfferingId } = req.params;
+    // All instructors have equal power — any instructor on the offering can submit grades
     if (!await verifyCourseOwnership(courseOfferingId, req.user.userId)) {
       return res.status(403).json({ error: 'Not authorized for this course' });
     }

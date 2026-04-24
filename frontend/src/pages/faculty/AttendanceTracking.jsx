@@ -16,6 +16,12 @@ export default function AttendanceTracking() {
 
   useEffect(() => {
     getMyCourseOfferings().then(r => setOfferings(r.data)).catch(() => {});
+    // Pre-select offering if navigated from FacultyDashboard
+    const preSelected = sessionStorage.getItem('selectedOfferingId');
+    if (preSelected) {
+      setCourseId(preSelected);
+      sessionStorage.removeItem('selectedOfferingId');
+    }
   }, []);
 
   useEffect(() => {

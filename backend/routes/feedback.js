@@ -2,9 +2,11 @@ const router = require('express').Router();
 const { authenticate, authorizeRoles } = require('../middleware/auth');
 const ctrl = require('../controllers/feedbackController');
 
-// Faculty: manage feedback windows
-router.post('/courses/:courseOfferingId/window', authenticate, authorizeRoles('faculty', 'admin'), ctrl.openWindow);
-router.patch('/window/:windowId/close', authenticate, authorizeRoles('faculty', 'admin'), ctrl.closeWindow);
+// Admin: open/close feedback windows for any course offering
+router.post('/courses/:courseOfferingId/window', authenticate, authorizeRoles('admin'), ctrl.openWindow);
+router.patch('/window/:windowId/close', authenticate, authorizeRoles('admin'), ctrl.closeWindow);
+
+// Faculty: view results for their own courses
 router.get('/courses/:courseOfferingId/results', authenticate, authorizeRoles('faculty', 'admin'), ctrl.getResults);
 
 // Student: submit feedback

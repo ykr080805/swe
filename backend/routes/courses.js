@@ -14,4 +14,7 @@ router.put('/:id', authenticate, authorizeRoles('admin'), auditLogger('UPDATE_CO
 router.post('/:id/offerings', authenticate, authorizeRoles('admin'), auditLogger('CREATE_OFFERING'), courseController.createOffering);
 router.patch('/:id/retire', authenticate, authorizeRoles('admin'), auditLogger('RETIRE_COURSE'), courseController.retireCourse);
 
+// Admin: manage co-instructors for an offering
+router.patch('/offerings/:offeringId/instructors', authenticate, authorizeRoles('admin'), auditLogger('MANAGE_INSTRUCTORS'), courseController.manageInstructors);
+
 module.exports = router;

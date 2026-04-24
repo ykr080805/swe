@@ -8,6 +8,17 @@ exports.openWindow = async (req, res) => {
   try {
     const { courseOfferingId } = req.params;
     const { startDate, endDate, questions } = req.body;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate are required' });
+    }
+
+    // Close any existing active window for this offering first
+    await FeedbackWindow.updateMany(
+      { courseOffering: courseOfferingId, isActive: true },
+      { isActive: false }
+    );
+
     const window = await FeedbackWindow.create({
       courseOffering: courseOfferingId,
       openedBy: req.user.userId,
@@ -17,6 +28,7 @@ exports.openWindow = async (req, res) => {
         { text: 'How would you rate the overall course quality?', type: 'rating' },
         { text: 'How effective was the teaching methodology?', type: 'rating' },
         { text: 'How well-organized was the course material?', type: 'rating' },
+        { text: 'Rate the availability and helpfulness of the instructor(s).', type: 'rating' },
         { text: 'Any additional comments or suggestions?', type: 'text' }
       ]
     });
@@ -62,6 +74,12 @@ exports.getActiveWindow = async (req, res) => {
 exports.submitFeedback = async (req, res) => {
   try {
     const { courseOfferingId } = req.params;
+    const { answers, overallRating, comments } = req.body;
+
+    if (!overallRating || overallRating < 1 || overallRating > 5) {
+      return res.status(400).json({ error: 'A valid overall rating (1–5) is required' });
+    }
+
     const now = new Date();
     const window = await FeedbackWindow.findOne({
       courseOffering: courseOfferingId,
@@ -69,19 +87,28 @@ exports.submitFeedback = async (req, res) => {
       startDate: { $lte: now },
       endDate: { $gte: now }
     });
-    if (!window) return res.status(400).json({ error: 'Feedback window is not open' });
+    if (!window) return res.status(400).json({ error: 'Feedback window is not currently open' });
 
-    // Anonymous — no student reference stored
-    const response = await FeedbackResponse.create({
+    // Sanitize answers: keep only meaningful values
+    const cleanAnswers = (answers || []).map(a => {
+      const clean = { questionIndex: a.questionIndex };
+      if (a.rating && a.rating > 0) clean.rating = a.rating;
+      if (a.text && a.text.trim()) clean.text = a.text.trim();
+      return clean;
+    });
+
+    await FeedbackResponse.create({
       feedbackWindow: window._id,
       courseOffering: courseOfferingId,
-      answers: req.body.answers,
-      overallRating: req.body.overallRating,
-      comments: req.body.comments
+      answers: cleanAnswers,
+      overallRating,
+      comments: comments?.trim() || ''
     });
+
     res.status(201).json({ message: 'Feedback submitted successfully' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to submit feedback' });
+    console.error('submitFeedback error:', err);
+    res.status(500).json({ error: err.message || 'Failed to submit feedback' });
   }
 };
 
@@ -91,7 +118,20 @@ exports.getResults = async (req, res) => {
   try {
     const { courseOfferingId } = req.params;
     const responses = await FeedbackResponse.find({ courseOffering: courseOfferingId });
-    if (responses.length === 0) return res.json({ totalResponses: 0, averageRating: null, results: [] });
+
+    // Fetch the latest window so we can return actual question texts
+    const window = await FeedbackWindow.findOne({ courseOffering: courseOfferingId })
+      .sort({ createdAt: -1 });
+
+    if (responses.length === 0) {
+      return res.json({
+        totalResponses: 0,
+        averageRating: null,
+        questionResults: [],
+        comments: [],
+        questions: window?.questions || []
+      });
+    }
 
     const avgRating = responses.reduce((s, r) => s + (r.overallRating || 0), 0) / responses.length;
 
@@ -105,8 +145,11 @@ exports.getResults = async (req, res) => {
       }
     }
 
+    const questions = window?.questions || [];
     const questionResults = Object.entries(questionMap).map(([idx, data]) => ({
       questionIndex: parseInt(idx),
+      questionText: questions[parseInt(idx)]?.text || `Question ${parseInt(idx) + 1}`,
+      questionType: questions[parseInt(idx)]?.type || 'rating',
       averageRating: data.ratings.length > 0 ? (data.ratings.reduce((a, b) => a + b, 0) / data.ratings.length).toFixed(2) : null,
       responseCount: data.ratings.length + data.texts.length,
       textResponses: data.texts
@@ -116,7 +159,8 @@ exports.getResults = async (req, res) => {
       totalResponses: responses.length,
       averageRating: avgRating.toFixed(2),
       comments: responses.filter(r => r.comments).map(r => r.comments),
-      questionResults
+      questionResults,
+      questions  // include raw questions for reference
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch feedback results' });
@@ -128,7 +172,10 @@ exports.getResults = async (req, res) => {
 exports.getAllFeedback = async (req, res) => {
   try {
     const windows = await FeedbackWindow.find()
-      .populate('courseOffering')
+      .populate({
+        path: 'courseOffering',
+        populate: { path: 'course', select: 'code name' }
+      })
       .populate('openedBy', 'name')
       .sort({ createdAt: -1 });
     

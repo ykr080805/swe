@@ -51,8 +51,9 @@ exports.getMyEnrollments = async (req, res) => {
     }).populate({
       path: 'courseOffering',
       populate: [
-        { path: 'course', select: 'code name credits description' },
-        { path: 'faculty', select: 'name' }
+        { path: 'course', select: 'code name credits description type' },
+        { path: 'faculty', select: 'name' },
+        { path: 'instructors', select: 'name userId' }
       ]
     });
     res.json(enrollments);

@@ -56,8 +56,17 @@ exports.getMe = async (req, res) => {
 exports.updateAvatar = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
-    const avatarPath = '/api/uploads/avatars/' + req.file.filename;
-    const user = await User.findByIdAndUpdate(req.user.userId, { avatar: avatarPath }, { new: true }).select('-password');
+
+    // Convert the in-memory buffer to a Base64 data URL and store in MongoDB
+    const base64 = req.file.buffer.toString('base64');
+    const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { avatar: dataUrl },
+      { new: true }
+    ).select('-password');
+
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: 'Failed to upload avatar' });

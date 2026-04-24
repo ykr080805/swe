@@ -98,6 +98,14 @@ export const submitFeedback = (courseOfferingId, data) => api.post(`/feedback/co
 export const getFeedbackResults = (courseOfferingId) => api.get(`/feedback/courses/${courseOfferingId}/results`);
 export const getAllFeedback = () => api.get('/feedback/all');
 
+// ─── Instructor Management (Admin) ───
+export const manageInstructors = (offeringId, data) => api.patch(`/courses/offerings/${offeringId}/instructors`, data);
+
+// ─── Departments & Programs ───
+export const getDepartments = () => api.get('/admin/departments');
+export const getPrograms = () => api.get('/admin/programs');
+export const getAdminOfferings = () => api.get('/admin/enrollments/offerings');
+
 // ─── Module 6: Hostel Transfers ───
 export const createTransferRequest = (data) => api.post('/hostel/transfers', data);
 export const getMyTransfers = () => api.get('/hostel/transfers/my');

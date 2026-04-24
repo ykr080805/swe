@@ -15,6 +15,11 @@ export default function GradeSubmission() {
 
   useEffect(() => {
     getMyCourseOfferings().then(r => setOfferings(r.data)).catch(() => {});
+    const preSelected = sessionStorage.getItem('selectedOfferingId');
+    if (preSelected) {
+      setCourseId(preSelected);
+      sessionStorage.removeItem('selectedOfferingId');
+    }
   }, []);
 
   useEffect(() => {

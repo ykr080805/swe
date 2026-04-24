@@ -16,7 +16,25 @@ exports.getMyAssignments = async (req, res) => {
     }).select('-attachmentData')
       .populate({ path: 'courseOffering', populate: { path: 'course', select: 'code name' } })
       .sort({ deadline: 1 });
-    res.json(assignments);
+
+    // Attach each student's own submission to the assignment
+    const assignmentIds = assignments.map(a => a._id);
+    const submissions = await Submission.find({
+      assignment: { $in: assignmentIds },
+      student: req.user.userId
+    }).select('-fileData');
+
+    const submissionMap = {};
+    for (const sub of submissions) {
+      submissionMap[sub.assignment.toString()] = sub;
+    }
+
+    const enriched = assignments.map(a => ({
+      ...a.toObject(),
+      mySubmission: submissionMap[a._id.toString()] || null
+    }));
+
+    res.json(enriched);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch assignments' });
   }

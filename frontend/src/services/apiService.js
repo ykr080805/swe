@@ -54,8 +54,14 @@ export const createLeaveRequest = (data) => api.post('/leaves', data);
 export const getMyLeaves = () => api.get('/leaves/my');
 export const getAllLeaves = () => api.get('/leaves');
 export const reviewLeave = (id, status) => api.patch(`/leaves/${id}/review`, { status });
+export const cancelLeave = (id) => api.delete(`/leaves/${id}`);
 
-export const createComplaint = (data) => api.post('/complaints', data);
+export const createComplaint = (data) => {
+  if (data instanceof FormData) {
+    return api.post('/complaints', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+  }
+  return api.post('/complaints', data);
+};
 export const getMyComplaints = () => api.get('/complaints/my');
 export const getAllComplaints = () => api.get('/complaints');
 export const updateComplaintStatus = (id, status) => api.patch(`/complaints/${id}/status`, { status });
@@ -85,6 +91,8 @@ export const dropCourse = (courseOfferingId) => api.delete(`/enrollment/${course
 // ─── Module 7: Documents / Transcript Requests ───
 export const getMyTranscriptRequests = () => api.get('/student/transcript-request');
 export const createTranscriptRequest = (data) => api.post('/student/transcript-request', data);
+export const getAllTranscriptRequests = () => api.get('/admin/transcript-request');
+export const updateTranscriptRequestStatus = (id, action, remarks) => api.patch(`/admin/transcript-request/${id}`, { action, remarks });
 export const generateTranscript = (studentId) => api.post(`/documents/transcript/${studentId}`);
 export const generateMyTranscript = () => api.post('/documents/my-transcript');
 export const downloadTranscript = (documentId) => api.get(`/documents/transcript/${documentId}`, { responseType: 'blob' });

@@ -2,7 +2,12 @@ const Complaint = require('../models/Complaint');
 
 exports.create = async (req, res) => {
   try {
-    const complaint = await Complaint.create({ ...req.body, student: req.user.userId });
+    const data = { ...req.body, student: req.user.userId };
+    if (req.file) {
+      const base64Data = req.file.buffer.toString('base64');
+      data.attachment = `data:${req.file.mimetype};base64,${base64Data}`;
+    }
+    const complaint = await Complaint.create(data);
     res.status(201).json(complaint);
   } catch (err) {
     res.status(500).json({ error: 'Failed to file complaint' });

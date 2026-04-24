@@ -43,3 +43,17 @@ exports.review = async (req, res) => {
     res.status(500).json({ error: 'Failed to review leave request' });
   }
 };
+
+exports.cancel = async (req, res) => {
+  try {
+    const leave = await LeaveRequest.findOneAndDelete({
+      _id: req.params.id,
+      student: req.user.userId,
+      status: 'Pending'
+    });
+    if (!leave) return res.status(404).json({ error: 'Pending leave request not found or unauthorized' });
+    res.json({ message: 'Leave request cancelled successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to cancel leave request' });
+  }
+};

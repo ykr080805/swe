@@ -37,9 +37,10 @@ export default function Login() {
     if (!userId || !password || !captchaAnswer) { setError('Please fill all fields'); refreshCaptcha(); return; }
     if (parseInt(captchaAnswer) !== captcha.a + captcha.b) { setError('Incorrect captcha. Try again.'); refreshCaptcha(); return; }
     try {
-      // Pass selectedRole to backend so it rejects mismatched roles before setting cookies
       const res = await login(userId, password, selectedRole);
-      navigate(`/${res.role}-dashboard`);
+      let dashboardPath = `/${res.role}-dashboard`;
+      if (res.role === 'hmc_member' || res.role === 'hostel_staff') dashboardPath = '/hmc-dashboard';
+      navigate(dashboardPath);
     } catch (err) {
       setError(err.response?.data?.error || 'Invalid credentials');
       refreshCaptcha();
@@ -69,7 +70,7 @@ export default function Login() {
           <h1 className="text-2xl font-bold text-gray-900 mb-8 text-left">Select a role</h1>
 
           <div className="space-y-4 mb-12">
-            {['student', 'faculty', 'admin'].map((role) => (
+            {['student', 'faculty', 'admin', 'hmc_member'].map((role) => (
               <label key={role} className="flex items-center space-x-3 cursor-pointer group">
                 <div className="relative flex items-center justify-center">
                   <input 
@@ -84,7 +85,7 @@ export default function Login() {
                     <div className="absolute w-2.5 h-2.5 bg-[#1a73e8] rounded-full pointer-events-none"></div>
                   )}
                 </div>
-                <span className="text-lg text-gray-800 capitalize select-none">{role}</span>
+                <span className="text-lg text-gray-800 capitalize select-none">{role === 'hmc_member' ? 'HMC Member' : role}</span>
               </label>
             ))}
           </div>
@@ -103,8 +104,10 @@ export default function Login() {
   }
 
   // Login form
-  const roleColors = { student: '#1a73e8', faculty: '#27ae60', admin: '#e67e22' };
+  const roleColors = { student: '#1a73e8', faculty: '#27ae60', admin: '#e67e22', hmc_member: '#8e44ad' };
   const accentColor = roleColors[selectedRole] || '#1a73e8';
+  const roleLabel = { student: 'Student', faculty: 'Faculty', admin: 'Admin', hmc_member: 'HMC Member' };
+  const displayRole = roleLabel[selectedRole] || selectedRole;
 
   return (
     <div className="fixed inset-0 w-full h-full flex items-center justify-center p-4">
@@ -116,7 +119,7 @@ export default function Login() {
           <img src="/iitg-logo.svg" alt="IIT Guwahati" className="w-14 h-14 mx-auto mb-3" />
           <h2 className="text-[#2c3e50] font-bold text-base">Academic Affairs Portal</h2>
           <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: accentColor + '15', color: accentColor }}>
-            {selectedRole} Login
+            {displayRole} Login
           </span>
         </div>
 
@@ -137,7 +140,7 @@ export default function Login() {
           {error && <p className="text-red-500 text-xs font-medium">{error}</p>}
 
           <button type="submit" className="w-full text-white font-semibold py-2.5 text-sm rounded-lg shadow-sm cursor-pointer transition-colors" style={{ backgroundColor: accentColor }}>
-            Sign in as {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
+            Sign in as {displayRole}
           </button>
         </form>
 

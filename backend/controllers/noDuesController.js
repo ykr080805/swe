@@ -30,6 +30,8 @@ exports.clearItem = async (req, res) => {
 
     item.status = 'Cleared';
     item.clearedAt = new Date();
+    if (req.body.amount) item.amount = req.body.amount;
+    if (req.body.remark) item.remark = req.body.remark;
     noDues.isFullyCleared = noDues.items.every(i => i.status === 'Cleared');
     await noDues.save();
     res.json(noDues);

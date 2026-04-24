@@ -19,7 +19,9 @@ export default function StudentDashboard() {
   }, []);
 
   const activeEnrollments = enrollments.filter(e => e.status === 'enrolled');
-  const pendingCount = assignments.filter(a => new Date(a.deadline) > new Date()).length;
+  // An assignment is truly pending only if deadline hasn't passed AND student hasn't submitted yet
+  const pendingAssignments = assignments.filter(a => new Date(a.deadline) > new Date() && !a.mySubmission);
+  const pendingCount = pendingAssignments.length;
 
   return (
     <div className="space-y-6">
@@ -78,7 +80,7 @@ export default function StudentDashboard() {
         <Card>
           <h3 className="font-bold text-gray-900 mb-4">Upcoming Deadlines</h3>
           <div className="space-y-3">
-            {assignments.filter(a => new Date(a.deadline) > new Date()).slice(0, 4).map((a, i) => (
+            {pendingAssignments.slice(0, 4).map((a, i) => (
               <div key={a._id || i} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-200">
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900">{a.title}</h4>
@@ -89,7 +91,7 @@ export default function StudentDashboard() {
                 </span>
               </div>
             ))}
-            {assignments.filter(a => new Date(a.deadline) > new Date()).length === 0 && (
+            {pendingAssignments.length === 0 && (
               <p className="text-gray-500 text-sm">No upcoming deadlines.</p>
             )}
           </div>

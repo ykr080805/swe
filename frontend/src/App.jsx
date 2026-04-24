@@ -16,6 +16,7 @@ import FacultyDirectory from './pages/admin/FacultyDirectory';
 import EnrollmentDashboard from './pages/admin/EnrollmentDashboard';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
+import DocumentManagement from './pages/admin/DocumentManagement';
 
 // Student Pages (Module 2, 6, 7)
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -26,6 +27,7 @@ import StudentAttendance from './pages/student/StudentAttendance';
 import LeaveApplication from './pages/student/LeaveApplication';
 import Complaints from './pages/student/Complaints';
 import NoDues from './pages/student/NoDues';
+import HostelTransfer from './pages/student/HostelTransfer';
 import DocumentRequests from './pages/student/DocumentRequests';
 import CourseFeedback from './pages/student/CourseFeedback';
 
@@ -40,16 +42,30 @@ import StudentCourseFeed from './pages/student/CourseFeed';
 
 import ProfileSettings from './pages/ProfileSettings';
 
+// HMC Pages (Module 6)
+import HMCDashboard from './pages/hmc/HMCDashboard';
+import LeaveManagement from './pages/hmc/LeaveManagement';
+import ComplaintsManagement from './pages/hmc/ComplaintsManagement';
+import NoDuesManagement from './pages/hmc/NoDuesManagement';
+import TransferManagement from './pages/hmc/TransferManagement';
+import AssetManagement from './pages/hmc/AssetManagement';
+import HMCMembers from './pages/hmc/HMCMembers';
+
 // Communication Pages (Module 4)
 import AnnouncementsFeed from './pages/communication/AnnouncementsFeed';
 import MessagingInbox from './pages/communication/MessagingInbox';
+
+function getDashboardPath(role) {
+  if (role === 'hmc_member' || role === 'hostel_staff') return '/hmc-dashboard';
+  return `/${role}-dashboard`;
+}
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to={`/${user.role}-dashboard`} replace />;
+    return <Navigate to={getDashboardPath(user.role)} replace />;
   }
   return children;
 }
@@ -57,7 +73,7 @@ function ProtectedRoute({ children, allowedRoles }) {
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  return user ? <Navigate to={`/${user.role}-dashboard`} replace /> : children;
+  return user ? <Navigate to={getDashboardPath(user.role)} replace /> : children;
 }
 
 const NAV_ITEMS = {
@@ -70,6 +86,7 @@ const NAV_ITEMS = {
     { title: 'Faculty', path: '/admin/faculty' },
     { title: 'Enrollments', path: '/admin/enrollments' },
     { title: 'Feedback', path: '/admin/feedback' },
+    { title: 'Documents', path: '/admin/documents' },
     { title: 'Announcements', path: '/admin/announcements' },
     { title: 'Analytics', path: '/admin/analytics' },
     { title: 'Messages', path: '/admin/messages' },
@@ -87,6 +104,7 @@ const NAV_ITEMS = {
     { title: 'Hostel Leave', path: '/student/leave' },
     { title: 'Complaints', path: '/student/complaints' },
     { title: 'No Dues', path: '/student/nodues' },
+    { title: 'Hostel Transfer', path: '/student/transfer' },
     { title: 'Documents', path: '/student/documents' },
     { title: 'Profile', path: '/student/profile' },
   ],
@@ -100,6 +118,15 @@ const NAV_ITEMS = {
     { title: 'Feedback Results', path: '/faculty/feedback' },
     { title: 'Messages', path: '/faculty/messages' },
     { title: 'Profile', path: '/faculty/profile' },
+  ],
+  hmc: [
+    { title: 'Dashboard', path: '/hmc-dashboard', end: true },
+    { title: 'Leaves', path: '/hmc/leaves' },
+    { title: 'Complaints', path: '/hmc/complaints' },
+    { title: 'No Dues', path: '/hmc/nodues' },
+    { title: 'Transfers', path: '/hmc/transfers' },
+    { title: 'Assets', path: '/hmc/assets' },
+    { title: 'HMC Members', path: '/hmc/members' },
   ],
 };
 
@@ -130,6 +157,7 @@ function App() {
           <Route path="/admin/announcements" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><AnnouncementsFeed /></AppShell></ProtectedRoute>} />
           <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><AnalyticsDashboard /></AppShell></ProtectedRoute>} />
           <Route path="/admin/feedback" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><FeedbackManagement /></AppShell></ProtectedRoute>} />
+          <Route path="/admin/documents" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><DocumentManagement /></AppShell></ProtectedRoute>} />
           <Route path="/admin/messages" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><MessagingInbox /></AppShell></ProtectedRoute>} />
           <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={['admin']}><AppShell role="Admin" navItems={NAV_ITEMS.admin}><ProfileSettings /></AppShell></ProtectedRoute>} />
           
@@ -149,6 +177,7 @@ function App() {
           <Route path="/student/leave" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><LeaveApplication /></AppShell></ProtectedRoute>} />
           <Route path="/student/complaints" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><Complaints /></AppShell></ProtectedRoute>} />
           <Route path="/student/nodues" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><NoDues /></AppShell></ProtectedRoute>} />
+          <Route path="/student/transfer" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><HostelTransfer /></AppShell></ProtectedRoute>} />
           <Route path="/student/documents" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><DocumentRequests /></AppShell></ProtectedRoute>} />
           <Route path="/student/feedback" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><CourseFeedback /></AppShell></ProtectedRoute>} />
           <Route path="/student/feed" element={<ProtectedRoute allowedRoles={['student']}><AppShell role="Student" navItems={NAV_ITEMS.student}><StudentCourseFeed /></AppShell></ProtectedRoute>} />
@@ -170,6 +199,21 @@ function App() {
           <Route path="/faculty/feed" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><FacultyCourseFeed /></AppShell></ProtectedRoute>} />
           <Route path="/faculty/messages" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><MessagingInbox /></AppShell></ProtectedRoute>} />
           <Route path="/faculty/profile" element={<ProtectedRoute allowedRoles={['faculty']}><AppShell role="Faculty" navItems={NAV_ITEMS.faculty}><ProfileSettings /></AppShell></ProtectedRoute>} />
+
+          {/* HMC Routes */}
+          <Route path="/hmc-dashboard" element={
+            <ProtectedRoute allowedRoles={['hmc_member', 'hostel_staff']}>
+              <AppShell role="HMC Staff" navItems={NAV_ITEMS.hmc}>
+                <HMCDashboard />
+              </AppShell>
+            </ProtectedRoute>
+          } />
+          <Route path="/hmc/leaves" element={<ProtectedRoute allowedRoles={['hmc_member', 'hostel_staff']}><AppShell role="HMC Staff" navItems={NAV_ITEMS.hmc}><LeaveManagement /></AppShell></ProtectedRoute>} />
+          <Route path="/hmc/complaints" element={<ProtectedRoute allowedRoles={['hmc_member', 'hostel_staff']}><AppShell role="HMC Staff" navItems={NAV_ITEMS.hmc}><ComplaintsManagement /></AppShell></ProtectedRoute>} />
+          <Route path="/hmc/nodues" element={<ProtectedRoute allowedRoles={['hmc_member', 'hostel_staff']}><AppShell role="HMC Staff" navItems={NAV_ITEMS.hmc}><NoDuesManagement /></AppShell></ProtectedRoute>} />
+          <Route path="/hmc/transfers" element={<ProtectedRoute allowedRoles={['hmc_member', 'hostel_staff']}><AppShell role="HMC Staff" navItems={NAV_ITEMS.hmc}><TransferManagement /></AppShell></ProtectedRoute>} />
+          <Route path="/hmc/assets" element={<ProtectedRoute allowedRoles={['hmc_member', 'hostel_staff']}><AppShell role="HMC Staff" navItems={NAV_ITEMS.hmc}><AssetManagement /></AppShell></ProtectedRoute>} />
+          <Route path="/hmc/members" element={<ProtectedRoute allowedRoles={['hmc_member', 'hostel_staff']}><AppShell role="HMC Staff" navItems={NAV_ITEMS.hmc}><HMCMembers /></AppShell></ProtectedRoute>} />
 
           {/* Catch all to redirect based on role */}
           <Route path="*" element={<Navigate to="/" replace />} />

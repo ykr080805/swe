@@ -25,6 +25,17 @@ exports.getStudentTranscriptRequests = async (req, res) => {
   }
 };
 
+exports.getAllTranscriptRequests = async (req, res) => {
+  try {
+    const requests = await TranscriptRequest.find()
+      .populate('studentId', 'name userId email department')
+      .sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 exports.updateTranscriptRequestStatus = async (req, res) => {
   try {
     const { action } = req.body;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Table from '../../components/common/Table';
-import { createLeaveRequest, getMyLeaves } from '../../services/apiService';
+import { createLeaveRequest, getMyLeaves, cancelLeave } from '../../services/apiService';
 
 export default function LeaveApplication() {
   const [leaves, setLeaves] = useState([]);
@@ -10,18 +10,32 @@ export default function LeaveApplication() {
   const [form, setForm] = useState({ type: 'Medical', startDate: '', endDate: '', reason: '' });
 
   useEffect(() => {
-    getMyLeaves().then(r => setLeaves(r.data)).catch(() => {});
+    fetchLeaves();
   }, []);
+
+  const fetchLeaves = () => {
+    getMyLeaves().then(r => setLeaves(r.data)).catch(() => {});
+  };
 
   const handleSubmit = async () => {
     try {
       await createLeaveRequest(form);
-      const res = await getMyLeaves();
-      setLeaves(res.data);
+      fetchLeaves();
       setIsModalOpen(false);
       setForm({ type: 'Medical', startDate: '', endDate: '', reason: '' });
     } catch {
       alert('Failed to submit leave request');
+    }
+  };
+
+  const handleCancel = async (id) => {
+    if (confirm('Are you sure you want to cancel this leave request?')) {
+      try {
+        await cancelLeave(id);
+        fetchLeaves();
+      } catch {
+        alert('Failed to cancel leave request');
+      }
     }
   };
 
@@ -37,17 +51,23 @@ export default function LeaveApplication() {
 
       <Card className="p-0 overflow-hidden">
         <Table
-          headers={['Type', 'Start Date', 'End Date', 'Status']}
+          headers={['Type', 'Reason', 'Start Date', 'End Date', 'Status', 'Actions']}
           data={leaves}
           renderRow={(leave) => (
             <>
               <td className="px-6 py-4 font-medium text-gray-900">{leave.type}</td>
+              <td className="px-6 py-4 text-gray-500 text-sm max-w-xs truncate" title={leave.reason}>{leave.reason}</td>
               <td className="px-6 py-4">{new Date(leave.startDate).toLocaleDateString()}</td>
               <td className="px-6 py-4">{new Date(leave.endDate).toLocaleDateString()}</td>
               <td className="px-6 py-4">
                 <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${leave.status === 'Approved' ? 'bg-emerald-50 text-emerald-600' : leave.status === 'Rejected' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
                   {leave.status}
                 </span>
+              </td>
+              <td className="px-6 py-4 text-right">
+                {leave.status === 'Pending' && (
+                  <button onClick={() => handleCancel(leave._id)} className="text-rose-500 hover:text-rose-700 text-sm font-medium">Cancel</button>
+                )}
               </td>
             </>
           )}

@@ -11,6 +11,9 @@ router.post('/student/transcript-request', authenticate, authorizeRoles('student
 // GET /api/student/transcript-request
 router.get('/student/transcript-request', authenticate, authorizeRoles('student'), transcriptRequestController.getStudentTranscriptRequests);
 
+// GET /api/admin/transcript-request — list all (admin)
+router.get('/admin/transcript-request', authenticate, authorizeRoles('admin'), transcriptRequestController.getAllTranscriptRequests);
+
 // PATCH /api/admin/transcript-request/:id
 router.patch('/admin/transcript-request/:id', authenticate, authorizeRoles('admin'), auditLogger('UPDATE_TRANSCRIPT_REQ'), transcriptRequestController.updateTranscriptRequestStatus);
 

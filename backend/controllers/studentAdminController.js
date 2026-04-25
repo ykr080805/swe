@@ -87,7 +87,7 @@ exports.bulkImportStudents = async (req, res) => {
     for (const row of records) {
       let user = null;
       try {
-        const password = row.password || 'changeme123';
+        const password = row.password || 'Welcome@123';
         const userId = row.userId || row['Roll Number'];
         const name = row.name || row['Student Name'];
         const email = row.email || row['Student Email'];

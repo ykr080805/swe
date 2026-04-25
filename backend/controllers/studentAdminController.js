@@ -69,12 +69,18 @@ exports.bulkImportStudents = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'CSV file is required' });
 
-    const fs = require('fs').promises;
-    const fsSync = require('fs');
     const { parse } = require('csv-parse/sync');
+    const Program = require('../models/Program');
 
-    const csvContent = await fs.readFile(req.file.path, 'utf8');
+    // Read from multer memory buffer instead of file path
+    const csvContent = req.file.buffer.toString('utf8');
     const records = parse(csvContent, { columns: true, skip_empty_lines: true, trim: true });
+
+    const programs = await Program.find({});
+    const programMap = {};
+    programs.forEach(p => {
+      programMap[p.name.toLowerCase()] = p._id;
+    });
 
     const results = { success: 0, failed: 0, errors: [] };
 
@@ -82,34 +88,49 @@ exports.bulkImportStudents = async (req, res) => {
       let user = null;
       try {
         const password = row.password || 'changeme123';
+        const userId = row.userId || row['Roll Number'];
+        const name = row.name || row['Student Name'];
+        const email = row.email || row['Student Email'];
+        const department = row.department || row['Department'];
+        const batch = row.batch || row['Batch'];
+        const currentSemester = row.currentSemester || row['Current Semester'];
+
+        let programId = undefined;
+        const progStr = row.program || row['Program'];
+        if (progStr) {
+           if (progStr.length === 24 && /^[0-9a-fA-F]{24}$/.test(progStr)) {
+               programId = progStr;
+           } else {
+               programId = programMap[progStr.toLowerCase()];
+           }
+        }
+
         // Note: bulk-import passwords are intentionally permissive — the user
         // will be required to change on first login (handled at auth time).
         user = await User.create({
-          userId: row.userId,
-          name: row.name,
-          email: row.email,
-          department: row.department,
+          userId: userId,
+          name: name,
+          email: email,
+          department: department,
           password,
           role: 'student'
         });
         await StudentProfile.create({
           user: user._id,
-          rollNumber: row.rollNumber,
-          program: row.program || undefined,
-          batch: row.batch,
-          currentSemester: parseInt(row.currentSemester) || 1
+          rollNumber: row.rollNumber || userId,
+          program: programId,
+          batch: batch,
+          currentSemester: parseInt(currentSemester) || 1
         });
         results.success++;
       } catch (err) {
         // Roll back the User if profile creation failed, so we don't leave orphans.
         if (user) await User.findByIdAndDelete(user._id).catch(() => {});
         results.failed++;
-        results.errors.push({ row: row.userId || row.email, error: err.message });
+        results.errors.push({ row: row.userId || row['Roll Number'] || row.email || row['Student Email'], error: err.message });
       }
     }
 
-    // Cleanup uploaded file
-    fsSync.unlink(req.file.path, () => {});
     res.json({ message: `Import complete: ${results.success} succeeded, ${results.failed} failed`, ...results });
   } catch (err) {
     res.status(500).json({ error: 'Bulk import failed: ' + err.message });

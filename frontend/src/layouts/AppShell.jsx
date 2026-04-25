@@ -10,7 +10,7 @@ export default function AppShell({ children, role, navItems }) {
       <header className="bg-[#2c3e50] text-white px-6 py-2.5 flex items-center space-x-3 shadow-md z-50">
         <img src="/iitg-logo.svg" alt="IITG" className="w-7 h-7" />
         <span className="font-semibold text-sm tracking-wide">Indian Institute of Technology Guwahati</span>
-        <span className="text-gray-400 text-xs ml-2">| Academic Affairs Portal</span>
+        <span className="text-gray-400 text-xs ml-2">| IITG Affairs Portal</span>
       </header>
 
       <div className="flex flex-1 relative">

@@ -4,7 +4,7 @@ services:
   # ---------------------------------------------------------------------------
   - type: web
     name: college-erp-backend
-    env: node
+    runtime: node
     rootDir: backend
     plan: free
     buildCommand: npm install
@@ -24,13 +24,13 @@ services:
   # ---------------------------------------------------------------------------
   # Frontend Static Site
   # ---------------------------------------------------------------------------
-  - type: static
+  - type: web
     name: college-erp-frontend
-    env: static
+    runtime: static
     rootDir: frontend
     plan: free
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     routes:
       - type: rewrite
         source: /*

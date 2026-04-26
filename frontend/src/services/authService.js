@@ -24,7 +24,7 @@ export const logout = () => api.post('/auth/logout');
 export const getMe = () => api.get('/auth/me');
 export const forgotPassword = (email) => api.post('/auth/forgot-password', { email });
 export const resetPassword = (token, newPassword) => api.post('/auth/reset-password', { token, newPassword });
-export const changePassword = (currentPassword, newPassword) =>
-  api.put('/auth/change-password', { currentPassword, newPassword });
+export const changePassword = (userId, currentPassword, newPassword) =>
+  api.put('/auth/change-password', { userId, currentPassword, newPassword });
 
 export default api;

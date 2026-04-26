@@ -17,7 +17,7 @@ function getStrength(pw) {
 
 export default function ChangePassword() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [form, setForm] = useState({ userId: '', currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -37,6 +37,10 @@ export default function ChangePassword() {
 
   const handleChange = async (e) => {
     e.preventDefault();
+    if (!form.userId) {
+      setMsg('Username is required');
+      return;
+    }
     if (!checks.len || !checks.upper || !checks.lower || !checks.digit || !checks.special) {
       setMsg('Password does not meet all requirements');
       return;
@@ -51,7 +55,7 @@ export default function ChangePassword() {
   };
 
   const handleReset = () => {
-    setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setForm({ userId: '', currentPassword: '', newPassword: '', confirmPassword: '' });
     setMsg('');
   };
 
@@ -74,7 +78,11 @@ export default function ChangePassword() {
           <div className="bg-[#2c3e50] text-white px-5 py-3 rounded-t font-semibold text-sm">Change Password</div>
           <form onSubmit={handleChange} className="p-5 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <input type="text" value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} placeholder="Username" className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#3498db]" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password (Current Password)</label>
               <div className="relative">
                 <input type={showCurrent ? 'text' : 'password'} value={form.currentPassword} onChange={e => setForm({...form, currentPassword: e.target.value})} placeholder="Current Password" className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-900 pr-14 focus:outline-none focus:border-[#3498db]" />
                 <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-2 text-gray-400 hover:text-gray-600 cursor-pointer text-xs">{showCurrent ? 'Hide' : 'Show'}</button>

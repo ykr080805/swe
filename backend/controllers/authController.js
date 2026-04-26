@@ -152,9 +152,14 @@ exports.resetPassword = async (req, res) => {
 
 exports.changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
-    const user = await User.findById(req.user.userId);
+    const { userId, currentPassword, newPassword } = req.body;
+    if (!userId) {
+      return res.status(400).json({ error: 'Username (User ID) is required' });
+    }
+
+    const user = await User.findOne({ userId });
     if (!user) return res.status(404).json({ error: 'User not found' });
+
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) return res.status(401).json({ error: 'Current password is incorrect' });
 
@@ -165,6 +170,7 @@ exports.changePassword = async (req, res) => {
     await user.save();
     res.json({ message: 'Password changed successfully!' });
   } catch (err) {
+    console.error('changePassword:', err);
     res.status(500).json({ error: 'Server error' });
   }
 };

@@ -13,6 +13,6 @@ router.patch('/me/avatar', authenticate, avatarUpload.single('avatar'), authCont
 
 router.post('/forgot-password', authLimiter, auditLogger('FORGOT_PASSWORD'), authController.forgotPassword);
 router.post('/reset-password', authLimiter, auditLogger('RESET_PASSWORD'), authController.resetPassword);
-router.put('/change-password', authLimiter, authenticate, auditLogger('CHANGE_PASSWORD'), authController.changePassword);
+router.put('/change-password', authLimiter, auditLogger('CHANGE_PASSWORD'), authController.changePassword);
 
 module.exports = router;
